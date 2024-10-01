@@ -1,4 +1,4 @@
-package com.qticket.concert.domain.model.vo;
+package com.qticket.concert.domain.seat.model;
 
 import jakarta.persistence.Enumerated;
 

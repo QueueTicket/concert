@@ -1,4 +1,4 @@
-package com.qticket.concert.domain.model.vo;
+package com.qticket.concert.domain.concertSeat.model;
 
 public enum SeatStatus {
   RESERVED("예약완료"),

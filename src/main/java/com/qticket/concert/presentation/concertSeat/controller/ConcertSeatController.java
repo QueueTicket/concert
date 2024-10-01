@@ -1,6 +1,6 @@
-package com.qticket.concert.presentation.controller.seat;
+package com.qticket.concert.presentation.concertSeat.controller;
 
-import com.qticket.concert.application.service.seat.SeatService;
+import com.qticket.concert.application.service.concertSeat.ConcertSeatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -9,9 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/seats")
+@RequestMapping("/concert-seats")
 @Slf4j
-public class SeatController {
-
-  private final SeatService seatService;
+public class ConcertSeatController {
+  private final ConcertSeatService concertSeatService;
 }

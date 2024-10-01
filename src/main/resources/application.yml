@@ -1,33 +1,33 @@
 spring:
   application:
-    name: concert
+    name: concert-server
+
+  h2:
+    console:
+      enabled: true
 
   datasource:
-    url: jdbc:h2:tcp://localhost/~/concert
+    url: jdbc:h2:tcp://localhost/~/ecommerce
     username: sa
     password:
     driver-class-name: org.h2.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create
-    defer-datasource-initialization: true
+      ddl-auto: create-drop
     properties:
       hibernate:
         format_sql: true
         highlight_sql: true
         default_batch_fetch_size: 100
-    open-in-view: false
     show-sql: true
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
-    register-with-eureka: true
-    fetch-registry: true
+      defaultZone: http://localhost:19090/eureka/
 
 server:
-  port: 19094
+  port: 19095
 
 

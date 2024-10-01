@@ -1,7 +1,8 @@
-package com.qticket.concert.domain.model;
+package com.qticket.concert.domain.concert.model;
 
 import com.qticket.common.BaseEntity;
-import com.qticket.concert.domain.model.vo.SeatGrade;
+import com.qticket.concert.domain.seat.model.SeatGrade;
+import com.qticket.concert.presentation.concert.dto.requset.PriceRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,4 +36,13 @@ public class Price extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private SeatGrade seatGrade;
 
+  public void addConcert(Concert concert) {
+    this.concert = concert;
+    concert.getPrices().add(this);
+  }
+
+  public void updatePrice(PriceRequest request){
+    price = request.getPrice();
+    seatGrade = request.getSeatGrade();
+}
 }

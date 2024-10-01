@@ -1,7 +1,8 @@
-package com.qticket.concert.domain.model;
+package com.qticket.concert.domain.seat.model;
 
 import com.qticket.common.BaseEntity;
-import com.qticket.concert.domain.model.vo.SeatGrade;
+import com.qticket.concert.domain.seat.model.SeatGrade;
+import com.qticket.concert.domain.venue.Venue;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
