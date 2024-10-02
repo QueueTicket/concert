@@ -27,7 +27,7 @@ repositories {
 		url = uri("https://maven.pkg.github.com/QueueTicket/common")
 		credentials {
 			username = "QueueTicket"
-			password = System.getenv("token")
+			password = "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"
 		}
 	}
 }
@@ -37,7 +37,7 @@ ext {
 }
 
 dependencies {
-	implementation 'com.qticket:common:0.0.7'
+	implementation 'com.qticket:common:0.0.11'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
