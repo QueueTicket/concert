@@ -1,20 +1,27 @@
 package com.qticket.concert.domain.venue;
 
 import com.qticket.common.BaseEntity;
+import com.qticket.concert.domain.seat.model.Seat;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor @AllArgsConstructor
+@SQLRestriction("is_delete is false")
 public class Venue extends BaseEntity {
   @Id
   @GeneratedValue
@@ -25,5 +32,8 @@ public class Venue extends BaseEntity {
   private String venueAddress;
   @Column(nullable = false)
   private Integer seatCapacity;
+
+  @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Seat> seats = new ArrayList<>();
 
 }

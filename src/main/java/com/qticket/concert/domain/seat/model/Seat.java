@@ -17,11 +17,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor @AllArgsConstructor
+@SQLRestriction("is_delete is false")
 public class Seat extends BaseEntity {
   @Id
   @GeneratedValue
@@ -37,5 +39,10 @@ public class Seat extends BaseEntity {
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private SeatGrade seatGrade;
+
+  public void addSeat(Venue venue){
+    venue.getSeats().add(this);
+}
+
 
 }
