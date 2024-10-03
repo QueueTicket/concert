@@ -70,10 +70,14 @@ public class Concert extends BaseEntity {
 
     if (request.getPrices() != null) {
       for (PriceRequest priceRequest : request.getPrices()) {
-        for (Price price : prices) {
-          price.updatePrice(priceRequest);
-        }
+        prices.stream()
+            .filter(price -> price.getSeatGrade().equals(priceRequest.getSeatGrade())) // 좌석 등급이 일치하는 경우 필터링
+            .forEach(price -> price.updatePrice(priceRequest));  // 필터된 가격만 업데이트
       }
     }
+  }
+
+  public void delete(String username) {
+    super.softDelete(username);
   }
 }
