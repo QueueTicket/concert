@@ -1,18 +1,32 @@
 package com.qticket.concert.application.service.concert;
 
-import com.qticket.common.exception.QueueTicketException;
 import com.qticket.concert.application.service.concert.mapper.ConcertMapper;
+import com.qticket.concert.application.service.concertSeat.ConcertSeatService;
 import com.qticket.concert.domain.concert.model.Concert;
 import com.qticket.concert.domain.concert.model.Price;
+import com.qticket.concert.domain.seat.model.Seat;
+import com.qticket.concert.domain.seat.model.SeatGrade;
+import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.concert.ConcertErrorCode;
+import com.qticket.concert.exception.venue.VenueErrorCode;
+import com.qticket.concert.exceptionCommon.QueueTicketException;
 import com.qticket.concert.infrastructure.repository.concert.ConcertRepository;
+import com.qticket.concert.infrastructure.repository.venue.VenueRepository;
+import com.qticket.concert.presentation.concert.dto.ConcertSearchCond;
 import com.qticket.concert.presentation.concert.dto.requset.CreateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.requset.UpdateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.response.ConcertResponse;
-import com.qticket.concert.presentation.concert.dto.requset.PriceRequest;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,23 +37,37 @@ import org.springframework.transaction.annotation.Transactional;
 public class ConcertService {
 
   private final ConcertRepository concertRepository;
+  private final VenueRepository venueRepository;
+  private final ConcertSeatService concertSeatService;
 
+  // 공연 생성 시, 가격과 공연의 좌석 까지 전부 생성
+  @CacheEvict(cacheNames = "concertAllCache", allEntries = true)
   public ConcertResponse createConcert(CreateConcertRequest request) {
-    Concert concert = ConcertMapper.requestToConcert(request);
+    Venue venue =
+        venueRepository
+            .findById(request.getVenueId())
+            .orElseThrow(() -> new QueueTicketException(VenueErrorCode.NOT_FOUND));
+    Concert concert = ConcertMapper.requestToConcert(request, venue);
 
-    for (PriceRequest priceRequest : request.getPrices()) {
-      Price price =
-          Price.builder()
-              .seatGrade(priceRequest.getSeatGrade())
-              .price(priceRequest.getPrice())
-              .build();
-      price.addConcert(concert);
-    }
+    // 해당 공연장에 존재하는 좌석 등급으로만 가격 등록
+    Map<SeatGrade, List<Seat>> seatMap = venue.getSeats().stream()
+        .collect(Collectors.groupingBy(Seat::getSeatGrade));
+    request.getPrices().stream()
+        .filter(pr -> seatMap.containsKey(pr.getSeatGrade()))
+        .map(pr -> Price.builder()
+            .seatGrade(pr.getSeatGrade())
+            .price(pr.getPrice())
+            .build())
+        .forEach(p -> p.addConcert(concert));
 
     Concert savedConcert = concertRepository.save(concert);
+    concertSeatService.createConcertSeat(savedConcert, venue);
+
     return ConcertMapper.toConcertResponse(savedConcert);
   }
 
+  @CachePut(cacheNames = "concertCache", key = "#concertId")
+  @CacheEvict(cacheNames = "concertAllCache", allEntries = true)
   public ConcertResponse updateConcert(UpdateConcertRequest request, UUID concertId) {
     Concert concert =
         concertRepository
@@ -47,6 +75,40 @@ public class ConcertService {
             .orElseThrow(() -> new QueueTicketException(ConcertErrorCode.NOT_FOUND));
 
     concert.update(request);
+    return ConcertMapper.toConcertResponse(concert);
+  }
+
+  @CacheEvict(cacheNames = "concertAllCache", allEntries = true)
+  public void deleteConcert(UUID concertId, String username) {
+    Concert concert =
+        concertRepository
+            .findById(concertId)
+            .orElseThrow(() -> new QueueTicketException(ConcertErrorCode.NOT_FOUND));
+    //concert 가 먼저 삭제되면 select 해오는게 안되서 먼저 concert Seat 부터 삭제
+//    List<ConcertSeat> concertSeats = concertSeatRepository.findByConcertId(concertId);
+//    log.info("concertSeats.size : {}", concertSeats.size());
+//    concertSeats.forEach(cs -> cs.softDelete(username));
+    int count = concertSeatService.deleteWithConcert(concertId);
+    log.info("soft delete {} lines in concertSeat", count);
+    concert.delete(username);
+    // 가격 삭제
+    concert.getPrices()
+        .forEach(p -> p.softDelete(username));
+  }
+
+  @Cacheable(cacheNames = "concertAllCache", key = "{#page.pageNumber, #page.pageSize, #cond.hashCode()}")
+  @Transactional(readOnly = true)
+  public Page<ConcertResponse> getAllConcerts(Pageable page, ConcertSearchCond cond) {
+    return concertRepository.searchConcert(page, cond);
+  }
+
+  @Cacheable(cacheNames = "concertCache", key = "#concertId")
+  @Transactional(readOnly = true)
+  public ConcertResponse getOneConcert(UUID concertId) {
+    Concert concert =
+        concertRepository
+            .findById(concertId)
+            .orElseThrow(() -> new QueueTicketException(ConcertErrorCode.NOT_FOUND));
     return ConcertMapper.toConcertResponse(concert);
   }
 }

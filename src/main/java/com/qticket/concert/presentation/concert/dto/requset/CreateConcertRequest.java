@@ -5,12 +5,15 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.Data;
 
 @Data
 public class CreateConcertRequest {
   @NotNull
   private String concertTitle;
+  @NotNull
+  private UUID venueId;
   @NotNull
   @FutureOrPresent(message = "공연 시작 시간은 과거일 수 없습니다")
   private LocalDateTime concertStartTime;
