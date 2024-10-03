@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.io.Serializable;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +25,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Builder
 @NoArgsConstructor @AllArgsConstructor
 @SQLRestriction("is_delete is false")
-public class ConcertSeat extends BaseEntity {
+public class ConcertSeat extends BaseEntity implements Serializable {
   @Id
   @GeneratedValue
   private UUID id;
@@ -39,4 +40,8 @@ public class ConcertSeat extends BaseEntity {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private SeatStatus status;
+
+  public void changeStatus(SeatStatus status) {
+    this.status = status;
+  }
 }

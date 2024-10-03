@@ -1,10 +1,27 @@
 package com.qticket.concert.presentation.concertSeat.controller;
 
 import com.qticket.concert.application.service.concertSeat.ConcertSeatService;
+import com.qticket.concert.domain.concertSeat.model.ConcertSeat;
+import com.qticket.concert.domain.concertSeat.model.SeatStatus;
+import com.qticket.concert.dto.ResponseDto;
+import com.qticket.concert.presentation.concertSeat.dto.request.CreateConcertSeatRequest;
+import com.qticket.concert.presentation.concertSeat.dto.request.UpdateConcertSeatRequest;
+import com.qticket.concert.presentation.concertSeat.dto.response.ConcertSeatResponse;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -13,4 +30,27 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class ConcertSeatController {
   private final ConcertSeatService concertSeatService;
+
+  // 공연별 공연좌석 조회
+  @GetMapping("/concert/{concertId}")
+  @ResponseStatus(HttpStatus.OK)
+  public List<ConcertSeatResponse> getConcertSeat(@PathVariable UUID concertId) {
+    List<ConcertSeat> concertSeats = concertSeatService.findByConcertId(concertId);
+    log.info("ConcertSeats with concertId: {}, seatsCount : {}", concertId, concertSeats.size());
+    return concertSeats.stream()
+        .map(ConcertSeatResponse::fromEntity).toList();
+  }
+
+  @GetMapping("/{concertSeatId}")
+  @ResponseStatus(HttpStatus.OK)
+  public ConcertSeatResponse getOneConcertSeat(@PathVariable UUID concertSeatId) {
+    return concertSeatService.getOneConcertSeat(concertSeatId);
+  }
+
+  // 좌석 상태 수정
+  @PutMapping
+  @ResponseStatus(HttpStatus.OK)
+  public List<ConcertSeatResponse> changeStatus(@RequestBody UpdateConcertSeatRequest request) {
+    return concertSeatService.changeStatus(request);
+  }
 }
