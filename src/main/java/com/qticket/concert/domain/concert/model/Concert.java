@@ -76,8 +76,4 @@ public class Concert extends BaseEntity {
       }
     }
   }
-
-  public void delete(String username) {
-    super.softDelete(username);
-  }
 }
