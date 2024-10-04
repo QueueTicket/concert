@@ -2,6 +2,7 @@ package com.qticket.concert.infrastructure.repository.concertSeat;
 
 import com.qticket.concert.domain.concertSeat.model.ConcertSeat;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,4 +18,7 @@ public interface ConcertSeatRepository extends JpaRepository<ConcertSeat, UUID> 
   @Modifying
   @Query("update ConcertSeat cs set cs.isDelete = true where cs.price.concert.id = :concertId")
   int deleteWithConcert(UUID concertId);
+
+  @Query("select cs from ConcertSeat cs where cs.seat.id = :seatId")
+  Optional<ConcertSeat> findBySeatId(UUID seatId);
 }

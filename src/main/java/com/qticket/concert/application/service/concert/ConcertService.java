@@ -61,8 +61,8 @@ public class ConcertService {
         .forEach(p -> p.addConcert(concert));
 
     Concert savedConcert = concertRepository.save(concert);
+    // 공연 좌석 생성
     concertSeatService.createConcertSeat(savedConcert, venue);
-
     return ConcertMapper.toConcertResponse(savedConcert);
   }
 
@@ -84,13 +84,11 @@ public class ConcertService {
         concertRepository
             .findById(concertId)
             .orElseThrow(() -> new QueueTicketException(ConcertErrorCode.NOT_FOUND));
-    //concert 가 먼저 삭제되면 select 해오는게 안되서 먼저 concert Seat 부터 삭제
-//    List<ConcertSeat> concertSeats = concertSeatRepository.findByConcertId(concertId);
-//    log.info("concertSeats.size : {}", concertSeats.size());
-//    concertSeats.forEach(cs -> cs.softDelete(username));
+    // 공연 좌석 삭제
     int count = concertSeatService.deleteWithConcert(concertId);
     log.info("soft delete {} lines in concertSeat", count);
-    concert.delete(username);
+    // 공연 삭제
+    concert.softDelete(username);
     // 가격 삭제
     concert.getPrices()
         .forEach(p -> p.softDelete(username));

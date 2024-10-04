@@ -2,6 +2,7 @@ package com.qticket.concert.domain.venue;
 
 import com.qticket.common.BaseEntity;
 import com.qticket.concert.domain.seat.model.Seat;
+import com.qticket.concert.presentation.venue.dto.request.UpdateVenueRequest;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,4 +37,15 @@ public class Venue extends BaseEntity {
   @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Seat> seats = new ArrayList<>();
 
+  public void update(UpdateVenueRequest request) {
+    if(request.getVenueName() != null){
+      venueName = request.getVenueName();
+    }
+    if(request.getVenueAddress() != null){
+      venueAddress = request.getVenueAddress();
+    }
+    if(request.getSeatCapacity() != null){
+      seatCapacity = request.getSeatCapacity();
+    }
+  }
 }

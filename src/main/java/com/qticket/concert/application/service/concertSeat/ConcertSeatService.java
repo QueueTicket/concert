@@ -125,4 +125,10 @@ public class ConcertSeatService {
         .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
     return ConcertSeatResponse.fromEntity(concertSeat);
   }
+
+  public ConcertSeat getConcertSeatBySeat(Seat seat) {
+    return concertSeatRepository
+        .findBySeatId(seat.getId())
+        .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
+  }
 }

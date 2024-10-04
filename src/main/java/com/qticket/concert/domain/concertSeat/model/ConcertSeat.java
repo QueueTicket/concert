@@ -44,4 +44,14 @@ public class ConcertSeat extends BaseEntity implements Serializable {
   public void changeStatus(SeatStatus status) {
     this.status = status;
   }
+
+  public void updateConcertSeat(SeatStatus status, Price price) {
+    if (status != null) {
+      this.status = status;
+    }
+
+    if(price != null) {
+      this.price = price;
+    }
+  }
 }

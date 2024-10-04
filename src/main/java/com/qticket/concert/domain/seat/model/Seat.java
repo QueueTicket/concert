@@ -42,7 +42,16 @@ public class Seat extends BaseEntity {
 
   public void addSeat(Venue venue){
     venue.getSeats().add(this);
-}
+  }
+
+  public void updateSeat(SeatGrade seatGrade, Integer seatNumber){
+    if(seatGrade != null){
+      this.seatGrade = seatGrade;
+    }
+    if(seatNumber != null){
+      this.seatNumber = seatNumber;
+    }
+  }
 
 
 }
