@@ -1,5 +1,6 @@
 package com.qticket.concert.application.service.concert;
 
+import com.qticket.common.exception.QueueTicketException;
 import com.qticket.concert.application.service.concert.mapper.ConcertMapper;
 import com.qticket.concert.application.service.concertSeat.ConcertSeatService;
 import com.qticket.concert.domain.concert.model.Concert;
@@ -9,7 +10,6 @@ import com.qticket.concert.domain.seat.model.SeatGrade;
 import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.concert.ConcertErrorCode;
 import com.qticket.concert.exception.venue.VenueErrorCode;
-import com.qticket.concert.exceptionCommon.QueueTicketException;
 import com.qticket.concert.infrastructure.repository.concert.ConcertRepository;
 import com.qticket.concert.infrastructure.repository.venue.VenueRepository;
 import com.qticket.concert.presentation.concert.dto.ConcertSearchCond;

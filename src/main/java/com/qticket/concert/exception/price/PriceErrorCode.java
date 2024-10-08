@@ -1,6 +1,6 @@
 package com.qticket.concert.exception.price;
 
-import com.qticket.concert.exceptionCommon.ErrorCode;
+import com.qticket.common.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
