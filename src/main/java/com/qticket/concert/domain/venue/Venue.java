@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +24,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Builder
 @NoArgsConstructor @AllArgsConstructor
 @SQLRestriction("is_delete is false")
-public class Venue extends BaseEntity {
+public class Venue extends BaseEntity implements Serializable {
   @Id
   @GeneratedValue
   private UUID id;

@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.io.Serializable;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +25,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Builder
 @NoArgsConstructor @AllArgsConstructor
 @SQLRestriction("is_delete is false")
-public class Price extends BaseEntity {
+public class Price extends BaseEntity implements Serializable {
   @Id
   @GeneratedValue
   private UUID id;
