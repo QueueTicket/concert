@@ -18,14 +18,16 @@ spring:
     password:
     driver-class-name: org.h2.Driver
 
+
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
         highlight_sql: true
         default_batch_fetch_size: 100
+        dialect: org.hibernate.dialect.H2Dialect
     show-sql: true
 
 eureka:
