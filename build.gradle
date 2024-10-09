@@ -26,8 +26,8 @@ repositories {
 	maven {
 		url = uri("https://maven.pkg.github.com/QueueTicket/common")
 		credentials {
-			username = "QueueTicket"
-			password = System.getenv("tokens")
+			username = System.getenv("GITHUB_USERNAME")
+			password = System.getenv("GITHUB_TOKEN")
 		}
 	}
 }
