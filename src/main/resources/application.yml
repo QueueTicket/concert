@@ -13,21 +13,20 @@ spring:
       port: 6379
 
   datasource:
-    url: jdbc:h2:tcp://localhost/~/concert
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
 
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
         highlight_sql: true
         default_batch_fetch_size: 100
-        dialect: org.hibernate.dialect.H2Dialect
     show-sql: true
 
 eureka:
