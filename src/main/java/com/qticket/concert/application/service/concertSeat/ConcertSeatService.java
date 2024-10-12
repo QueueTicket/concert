@@ -1,6 +1,7 @@
 package com.qticket.concert.application.service.concertSeat;
 
 import com.qticket.common.exception.QueueTicketException;
+import com.qticket.concert.application.service.concertSeat.redis.RedisSeatService;
 import com.qticket.concert.domain.concert.model.Concert;
 import com.qticket.concert.domain.concert.model.Price;
 import com.qticket.concert.domain.concertSeat.model.ConcertSeat;
@@ -11,15 +12,20 @@ import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.concertSeat.ConcertSeatErrorCode;
 import com.qticket.concert.exception.price.PriceErrorCode;
 import com.qticket.concert.infrastructure.repository.concertSeat.ConcertSeatRepository;
+import com.qticket.concert.infrastructure.repository.redis.RedisRepository;
+import com.qticket.concert.presentation.concertSeat.controller.ConcertSeatController;
 import com.qticket.concert.presentation.concertSeat.dto.request.UpdateConcertSeatRequest;
 import com.qticket.concert.presentation.concertSeat.dto.response.ConcertSeatResponse;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RedissonClient;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,6 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ConcertSeatService {
   private final ConcertSeatRepository concertSeatRepository;
   private final CacheManager cacheManager;
+  private final RedisRepository redisRepository;
+  private final RedisSeatService redisSeatService;
 
   public void createConcertSeat(Concert concert, Venue venue) {
     log.info("create ConcertSeat in createConcert");
@@ -50,11 +58,13 @@ public class ConcertSeatService {
     seatGrades.stream()
         .filter(seatGrade -> seatExistsForGrade(seats, seatGrade)) // 해당 좌석 등급이 존재하는지 확인
         .filter(priceMap::containsKey) // 해당 좌석 등급에 대한 가격이 존재하는지 확인
-        .forEach(seatGrade -> saveConcertSeatsForGrade(seats, seatGrade, priceMap));
+        .forEach(seatGrade -> saveConcertSeatsForGrade(concert, seats, seatGrade, priceMap));
+
   }
 
   // 공연 좌석 저장
-  private void saveConcertSeatsForGrade(
+  private List<ConcertSeat> saveConcertSeatsForGrade(
+      Concert concert,
       List<Seat> seats,
       SeatGrade seatGrade,
       Map<SeatGrade, Price> priceMap) {
@@ -77,8 +87,12 @@ public class ConcertSeatService {
                         .price(price)
                         .status(SeatStatus.AVAILABLE).build())
             .toList();
-
     concertSeatRepository.saveAll(concertSeats);
+    log.info("concertSeats size : {}", concertSeats.size());
+    concertSeats.forEach(cs -> {
+      redisRepository.save(cs, concert);
+    });
+    return concertSeats;
   }
 
   private boolean seatExistsForGrade(List<Seat> seats, SeatGrade seatGrade) {
@@ -126,9 +140,53 @@ public class ConcertSeatService {
     return ConcertSeatResponse.fromEntity(concertSeat);
   }
 
-  public ConcertSeat getConcertSeatBySeat(Seat seat) {
+  public Optional<ConcertSeat> getConcertSeatBySeat(UUID seatId) {
     return concertSeatRepository
-        .findBySeatId(seat.getId())
-        .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
+        .findBySeatId(seatId);
+  }
+
+  public List<UUID> selectConcertSeats(List<UUID> concertIds) {
+    List<UUID> selectedSeats = new ArrayList<>();
+    concertIds.forEach(
+        id -> {
+          Integer flag = redisRepository.getSeatFlagById(id);
+          log.info("flag : {}", flag);
+          Long result = redisRepository.selectSeats(id);
+          log.info("result : {}", result);
+          if (result < 0) {
+            redisRepository.cancelSelect(id);
+            throw new QueueTicketException(ConcertSeatErrorCode.PREEMPTED);
+          } else {
+            ConcertSeat concertSeat =
+                concertSeatRepository
+                    .findById(id)
+                    .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
+            concertSeat.changeStatus(SeatStatus.PAYING);
+            UUID concertSeatId = concertSeat.getId();
+            selectedSeats.add(concertSeatId);
+            log.info("Seats are Selected");
+          }
+        });
+    return selectedSeats;
+  }
+
+  public List<UUID> selectConcertSeats2(List<UUID> concertIds) {
+    List<UUID> selectedSeats = new ArrayList<>();
+    for (UUID concertId : concertIds) {
+      System.out.println("여기  = " + concertId);
+    }
+    concertIds.forEach(id ->{
+      log.info("select 1 ConcertSeatId : {}", id);
+      if(redisSeatService.selectSeat(id)){
+        log.info("select 2 ConcertSeatId : {}", id);
+        selectedSeats.add(id);
+        ConcertSeat concertSeat =
+                concertSeatRepository
+                    .findById(id)
+                    .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
+            concertSeat.changeStatus(SeatStatus.PAYING);
+      }
+    });
+    return selectedSeats;
   }
 }
