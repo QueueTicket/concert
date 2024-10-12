@@ -92,7 +92,6 @@ public class ConcertService {
     // 가격 삭제
     concert.getPrices()
         .forEach(p -> p.softDelete(username));
-    concertSeatService.deleteWithConcert(concertId);
   }
 
   @Cacheable(cacheNames = "concertAllCache", key = "{#page.pageNumber, #page.pageSize, #cond.hashCode()}")
