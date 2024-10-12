@@ -9,6 +9,7 @@ import com.qticket.concert.domain.concert.model.Concert;
 import com.qticket.concert.domain.concert.model.Price;
 import com.qticket.concert.domain.concertSeat.model.ConcertSeat;
 import com.qticket.concert.domain.seat.model.Seat;
+import com.qticket.concert.domain.seat.service.SeatUpdateService;
 import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.price.PriceErrorCode;
 import com.qticket.concert.exception.seat.SeatErrorCode;
@@ -22,9 +23,7 @@ import com.qticket.concert.presentation.venue.dto.request.CreateVenueRequest;
 import com.qticket.concert.presentation.venue.dto.request.UpdateVenueRequest;
 import com.qticket.concert.presentation.venue.dto.response.VenueResponse;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,7 +39,7 @@ public class VenueService {
 
   private final VenueRepository venueRepository;
   private final SeatService seatService;
-  private final ConcertSeatService concertSeatService;
+  private final SeatUpdateService seatUpdateService;
 
   public VenueResponse createVenue(CreateVenueRequest request) {
     Venue venue = VenueMapper.createRequestToEntity(request);
@@ -55,12 +54,7 @@ public class VenueService {
 
     for (CreateSeatRequest createSeatRequest : seatList) {
       for (int i = 1; i <= createSeatRequest.getSeatCount(); i++) {
-        Seat seat = Seat.builder()
-                .seatNumber(i)
-                .venue(venue)
-                .seatGrade(createSeatRequest.getSeatGrade())
-                .build();
-        seat.addSeat(venue);
+        Seat.createSeat(createSeatRequest, i, venue);
       }
       venueRepository.flush();
     }
@@ -75,37 +69,10 @@ public class VenueService {
         request.getSeatRequests().stream()
             .filter(r -> r.getSeatId().equals(seat.getId()))
             .forEach(r -> {
-              // 좌석이 등급 변경 시
-              if (!seat.getSeatGrade().equals(r.getSeatGrade())) {
-                ConcertSeat concertSeat = concertSeatService.getConcertSeatBySeat(seat);
-                Concert concert = concertSeat.getPrice().getConcert();
-                Price updatePrice = concert.getPrices().stream()
-                    .filter(price -> price.getSeatGrade().equals(r.getSeatGrade()))
-                    .findFirst()
-                    .orElseThrow(() -> new QueueTicketException(PriceErrorCode.NOT_FOUND));
-                // 공연 좌석 가격 업데이트
-                concertSeat.updateConcertSeat(null, updatePrice);
-                int maxSeatNumber = getMaxSeatNumber(r, venue);
-                seat.updateSeat(r.getSeatGrade(), maxSeatNumber + 1);
-              } else {
-                // 좌석 등급이 동일하면 좌석 번호만 업데이트
-                seat.updateSeat(r.getSeatGrade(), r.getSeatNumber());
-              }
-            })
-    );
+                  seatUpdateService.updateSeatGradeAndPrice(seat, r, venue);
+            }));
     log.info("venue and Seats updated");
     return VenueMapper.toResponse(venue);
-  }
-
-  // 새로운 좌석 등급에서 가장 큰 seatNumber를 찾음
-  private static int getMaxSeatNumber(UpdateSeatRequest r, Venue venue) {
-    int maxNumber = venue.getSeats().stream()
-        .filter(s -> s.getSeatGrade().equals(r.getSeatGrade()))
-        .mapToInt(Seat::getSeatNumber)
-        .max()
-        .orElse(0);// 바꾸려는 등급 좌석이 없으면 0부터 시작
-    log.info("venue with Id {} , have {} seats", venue.getId(), maxNumber);
-    return maxNumber;
   }
 
   public void deleteVenue(UUID venueId) {
@@ -116,10 +83,12 @@ public class VenueService {
     log.info("delete venue complete venueId : {} by username : {}", venueId, username);
   }
 
+  @Transactional(readOnly = true)
   public Page<VenueResponse> searchVenues(Pageable pageable, VenueSearchCond cond) {
     return venueRepository.searchVenue(pageable, cond);
   }
 
+  @Transactional(readOnly = true)
   public VenueResponse getOneVenue(UUID venueId) {
     Venue venue = getVenue(venueId);
     return VenueMapper.toResponse(venue);
