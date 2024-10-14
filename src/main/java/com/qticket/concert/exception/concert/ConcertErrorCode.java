@@ -8,7 +8,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 @Getter
 public enum ConcertErrorCode implements ErrorCode {
-  NOT_FOUND(HttpStatus.NOT_FOUND, "CONCERT_001", "콘서트가 존재하지 않습니다")
+  NOT_FOUND(HttpStatus.NOT_FOUND, "CONCERT_001", "콘서트가 존재하지 않습니다"),
+  UNAUTHORIZED(HttpStatus.FORBIDDEN, "CONCERT_002", "권한이 없습니다")
   ;
 
   private final HttpStatus status;
