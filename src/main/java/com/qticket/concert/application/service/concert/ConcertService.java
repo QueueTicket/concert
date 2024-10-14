@@ -79,7 +79,7 @@ public class ConcertService {
   }
 
   @CacheEvict(cacheNames = "concertAllCache", allEntries = true)
-  public void deleteConcert(UUID concertId, String username) {
+  public void deleteConcert(UUID concertId, Long username) {
     Concert concert =
         concertRepository
             .findById(concertId)
@@ -88,10 +88,10 @@ public class ConcertService {
     int count = concertSeatService.deleteWithConcert(concertId);
     log.info("soft delete {} lines in concertSeat", count);
     // 공연 삭제
-    concert.softDelete(username);
+    concert.softDelete(String.valueOf(username));
     // 가격 삭제
     concert.getPrices()
-        .forEach(p -> p.softDelete(username));
+        .forEach(p -> p.softDelete(String.valueOf(username)));
   }
 
   @Cacheable(cacheNames = "concertAllCache", key = "{#page.pageNumber, #page.pageSize, #cond.hashCode()}")

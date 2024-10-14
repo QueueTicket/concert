@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
-@SpringBootApplication(scanBasePackages = {"com.qticket.concert"})
+@SpringBootApplication(scanBasePackages = {"com.qticket.concert", "com.qticket.common"})
 @EnableJpaAuditing
 @EnableDiscoveryClient
 @EnableFeignClients

@@ -75,11 +75,10 @@ public class VenueService {
     return VenueMapper.toResponse(venue);
   }
 
-  public void deleteVenue(UUID venueId) {
+  public void deleteVenue(UUID venueId, Long username) {
     Venue venue = getVenue(venueId);
-    String username = "username";
     seatService.delete(venueId, username);
-    venue.softDelete(username);
+    venue.softDelete(String.valueOf(username));
     log.info("delete venue complete venueId : {} by username : {}", venueId, username);
   }
 

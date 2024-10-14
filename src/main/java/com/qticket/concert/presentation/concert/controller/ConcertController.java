@@ -1,7 +1,10 @@
 package com.qticket.concert.presentation.concert.controller;
 
+import com.qticket.common.exception.QueueTicketException;
+import com.qticket.common.login.CurrentUser;
 import com.qticket.common.login.Login;
 import com.qticket.concert.application.service.concert.ConcertService;
+import com.qticket.concert.exception.concert.ConcertErrorCode;
 import com.qticket.concert.presentation.concert.dto.ConcertSearchCond;
 import com.qticket.concert.presentation.concert.dto.requset.CreateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.requset.UpdateConcertRequest;
@@ -35,21 +38,32 @@ public class ConcertController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public ConcertResponse createConcert(@RequestBody CreateConcertRequest request) {
+  public ConcertResponse createConcert(@RequestBody CreateConcertRequest request, @Login CurrentUser currentUser) {
+    if(isCustomer(currentUser.getCurrentUserRole())){
+      throw new QueueTicketException(ConcertErrorCode.UNAUTHORIZED);
+    }
+
     return concertService.createConcert(request);
   }
 
   @PutMapping("/{concertId}")
   @ResponseStatus(HttpStatus.OK)
   public ConcertResponse updateConcert(
-      @RequestBody UpdateConcertRequest request, @PathVariable UUID concertId) {
+      @RequestBody UpdateConcertRequest request, @PathVariable UUID concertId, @Login CurrentUser currentUser) {
+    if(isCustomer(currentUser.getCurrentUserRole())){
+      throw new QueueTicketException(ConcertErrorCode.UNAUTHORIZED);
+    }
+
     return concertService.updateConcert(request, concertId);
   }
 
   @DeleteMapping("/{concertId}")
-  public ResponseEntity<String> deleteConcert(@PathVariable UUID concertId) {
+  public ResponseEntity<String> deleteConcert(@PathVariable UUID concertId, @Login CurrentUser currentUser) {
+    if(isCustomer(currentUser.getCurrentUserRole())){
+      throw new QueueTicketException(ConcertErrorCode.UNAUTHORIZED);
+    }
     // 임시 설정
-    String username = "admin";
+    Long username = currentUser.getCurrentUserId();
     concertService.deleteConcert(concertId, username);
     return ResponseEntity.noContent().build();
   }
@@ -65,4 +79,8 @@ public class ConcertController {
   public ConcertResponse getOneConcerts(@PathVariable UUID concertId){
     return concertService.getOneConcert(concertId);
 }
+
+  private boolean isCustomer(String userRole) {
+    return "CUSTOMER".equals(userRole);
+  }
 }
