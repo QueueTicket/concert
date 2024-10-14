@@ -16,9 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class SeatService {
 
   private final SeatRepository seatRepository;
-  private final VenueRepository venueRepository;
 
-  public void delete(UUID venueId, String username) {
+  public void delete(UUID venueId, Long username) {
     seatRepository.softDeleteWithVenueId(venueId,username);
   }
 
