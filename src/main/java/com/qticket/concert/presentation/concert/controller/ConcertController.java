@@ -62,7 +62,6 @@ public class ConcertController {
     if(isCustomer(currentUser.getCurrentUserRole())){
       throw new QueueTicketException(ConcertErrorCode.UNAUTHORIZED);
     }
-    // 임시 설정
     Long username = currentUser.getCurrentUserId();
     concertService.deleteConcert(concertId, username);
     return ResponseEntity.noContent().build();

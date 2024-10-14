@@ -8,8 +8,11 @@ import com.qticket.concert.domain.concertSeat.model.ConcertSeat;
 import com.qticket.concert.domain.seat.model.Seat;
 import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.price.PriceErrorCode;
+import com.qticket.concert.exception.seat.SeatErrorCode;
 import com.qticket.concert.presentation.seat.dto.request.UpdateSeatRequest;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
@@ -44,7 +47,15 @@ public class SeatUpdateService {
         seat.updateSeat(request.getSeatGrade(), maxSeatNumber + 1);
     } else {
       // 좌석 등급이 동일하면 좌석 번호만 업데이트
-      seat.updateSeat(request.getSeatGrade(), request.getSeatNumber());
+      // 중복된 좌석 번호로 변경 시 예외 처리
+        List<Integer> seatNumberList = venue.getSeats().stream()
+            .map(Seat::getSeatNumber)
+            .toList();
+
+        if( seatNumberList.contains(request.getSeatNumber()) ){
+          throw new QueueTicketException(SeatErrorCode.DUPLICATE_SEATNUMBER);
+        }
+        seat.updateSeat(null, request.getSeatNumber());
     }
     cacheManager.getCache("seatsForConcert").evictIfPresent(concert.getId());
     } else {

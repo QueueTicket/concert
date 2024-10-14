@@ -45,8 +45,5 @@ public class Venue extends BaseEntity implements Serializable {
     if(request.getVenueAddress() != null){
       venueAddress = request.getVenueAddress();
     }
-    if(request.getSeatCapacity() != null){
-      seatCapacity = request.getSeatCapacity();
-    }
   }
 }
