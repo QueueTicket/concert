@@ -11,11 +11,13 @@ import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.concert.ConcertErrorCode;
 import com.qticket.concert.exception.venue.VenueErrorCode;
 import com.qticket.concert.infrastructure.repository.concert.ConcertRepository;
+import com.qticket.concert.infrastructure.repository.price.PriceRepository;
 import com.qticket.concert.infrastructure.repository.venue.VenueRepository;
 import com.qticket.concert.presentation.concert.dto.ConcertSearchCond;
 import com.qticket.concert.presentation.concert.dto.requset.CreateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.requset.UpdateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.response.ConcertResponse;
+import com.qticket.concert.presentation.concert.dto.response.PriceResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,6 +41,7 @@ public class ConcertService {
   private final ConcertRepository concertRepository;
   private final VenueRepository venueRepository;
   private final ConcertSeatService concertSeatService;
+  private final PriceRepository priceRepository;
 
   // 공연 생성 시, 가격과 공연의 좌석 까지 전부 생성
   @CacheEvict(cacheNames = "concertAllCache", allEntries = true)
@@ -50,14 +53,11 @@ public class ConcertService {
     Concert concert = ConcertMapper.requestToConcert(request, venue);
 
     // 해당 공연장에 존재하는 좌석 등급으로만 가격 등록
-    Map<SeatGrade, List<Seat>> seatMap = venue.getSeats().stream()
-        .collect(Collectors.groupingBy(Seat::getSeatGrade));
+    Map<SeatGrade, List<Seat>> seatMap =
+        venue.getSeats().stream().collect(Collectors.groupingBy(Seat::getSeatGrade));
     request.getPrices().stream()
         .filter(pr -> seatMap.containsKey(pr.getSeatGrade()))
-        .map(pr -> Price.builder()
-            .seatGrade(pr.getSeatGrade())
-            .price(pr.getPrice())
-            .build())
+        .map(pr -> Price.builder().seatGrade(pr.getSeatGrade()).price(pr.getPrice()).build())
         .forEach(p -> p.addConcert(concert));
 
     Concert savedConcert = concertRepository.save(concert);
@@ -90,11 +90,12 @@ public class ConcertService {
     // 공연 삭제
     concert.softDelete(String.valueOf(username));
     // 가격 삭제
-    concert.getPrices()
-        .forEach(p -> p.softDelete(String.valueOf(username)));
+    concert.getPrices().forEach(p -> p.softDelete(String.valueOf(username)));
   }
 
-  @Cacheable(cacheNames = "concertAllCache", key = "{#page.pageNumber, #page.pageSize, #cond.hashCode()}")
+  @Cacheable(
+      cacheNames = "concertAllCache",
+      key = "{#page.pageNumber, #page.pageSize, #cond.hashCode()}")
   @Transactional(readOnly = true)
   public Page<ConcertResponse> getAllConcerts(Pageable page, ConcertSearchCond cond) {
     return concertRepository.searchConcert(page, cond);
@@ -108,5 +109,11 @@ public class ConcertService {
             .findById(concertId)
             .orElseThrow(() -> new QueueTicketException(ConcertErrorCode.NOT_FOUND));
     return ConcertMapper.toConcertResponse(concert);
+  }
+
+  public List<PriceResponse> getPrice(List<UUID> priceIds) {
+    List<Price> priceList = priceRepository.findPriceByPriceIds(priceIds);
+
+    return priceList.stream().map(ConcertMapper::toPriceResponse).toList();
   }
 }
