@@ -9,11 +9,11 @@ import com.qticket.concert.presentation.concert.dto.ConcertSearchCond;
 import com.qticket.concert.presentation.concert.dto.requset.CreateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.requset.UpdateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.response.ConcertResponse;
+import com.qticket.concert.presentation.concert.dto.response.PriceResponse;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.actuate.autoconfigure.observation.ObservationProperties.Http;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -38,8 +38,9 @@ public class ConcertController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public ConcertResponse createConcert(@RequestBody CreateConcertRequest request, @Login CurrentUser currentUser) {
-    if(isCustomer(currentUser.getCurrentUserRole())){
+  public ConcertResponse createConcert(
+      @RequestBody CreateConcertRequest request, @Login CurrentUser currentUser) {
+    if (isCustomer(currentUser.getCurrentUserRole())) {
       throw new QueueTicketException(ConcertErrorCode.UNAUTHORIZED);
     }
 
@@ -49,8 +50,10 @@ public class ConcertController {
   @PutMapping("/{concertId}")
   @ResponseStatus(HttpStatus.OK)
   public ConcertResponse updateConcert(
-      @RequestBody UpdateConcertRequest request, @PathVariable UUID concertId, @Login CurrentUser currentUser) {
-    if(isCustomer(currentUser.getCurrentUserRole())){
+      @RequestBody UpdateConcertRequest request,
+      @PathVariable UUID concertId,
+      @Login CurrentUser currentUser) {
+    if (isCustomer(currentUser.getCurrentUserRole())) {
       throw new QueueTicketException(ConcertErrorCode.UNAUTHORIZED);
     }
 
@@ -58,11 +61,11 @@ public class ConcertController {
   }
 
   @DeleteMapping("/{concertId}")
-  public ResponseEntity<String> deleteConcert(@PathVariable UUID concertId, @Login CurrentUser currentUser) {
-    if(isCustomer(currentUser.getCurrentUserRole())){
+  public ResponseEntity<String> deleteConcert(
+      @PathVariable UUID concertId, @Login CurrentUser currentUser) {
+    if (isCustomer(currentUser.getCurrentUserRole())) {
       throw new QueueTicketException(ConcertErrorCode.UNAUTHORIZED);
     }
-    // 임시 설정
     Long username = currentUser.getCurrentUserId();
     concertService.deleteConcert(concertId, username);
     return ResponseEntity.noContent().build();
@@ -70,15 +73,21 @@ public class ConcertController {
 
   @GetMapping
   @ResponseStatus(HttpStatus.OK)
-  public Page<ConcertResponse> getAllConcerts(Pageable pageable, ConcertSearchCond cond){
+  public Page<ConcertResponse> getAllConcerts(Pageable pageable, ConcertSearchCond cond) {
     return concertService.getAllConcerts(pageable, cond);
   }
 
   @GetMapping("/{concertId}")
   @ResponseStatus(HttpStatus.OK)
-  public ConcertResponse getOneConcerts(@PathVariable UUID concertId){
+  public ConcertResponse getOneConcerts(@PathVariable UUID concertId) {
     return concertService.getOneConcert(concertId);
-}
+  }
+
+  @GetMapping("/prices")
+  @ResponseStatus(HttpStatus.OK)
+  public List<PriceResponse> getPrice(@RequestBody List<UUID> priceIds) {
+    return concertService.getPrice(priceIds);
+  }
 
   private boolean isCustomer(String userRole) {
     return "CUSTOMER".equals(userRole);

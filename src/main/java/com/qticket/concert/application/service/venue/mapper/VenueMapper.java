@@ -9,7 +9,7 @@ import java.util.ArrayList;
 public class VenueMapper {
   public static Venue createRequestToEntity(CreateVenueRequest request) {
     return Venue.builder()
-        .seatCapacity(request.getSeatCapacity())
+        .seatCapacity(request.getSeats().size())
         .venueName(request.getVenueName())
         .venueAddress(request.getVenueAddress())
         .seats(new ArrayList<>())

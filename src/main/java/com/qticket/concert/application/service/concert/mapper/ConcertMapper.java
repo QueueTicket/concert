@@ -7,11 +7,10 @@ import com.qticket.concert.presentation.concert.dto.requset.CreateConcertRequest
 import com.qticket.concert.presentation.concert.dto.response.ConcertResponse;
 import com.qticket.concert.presentation.concert.dto.response.PriceResponse;
 import java.util.ArrayList;
-import org.springframework.stereotype.Component;
 
 public class ConcertMapper {
 
-  public static Concert requestToConcert(CreateConcertRequest request, Venue venue){
+  public static Concert requestToConcert(CreateConcertRequest request, Venue venue) {
     return Concert.builder()
         .concertTitle(request.getConcertTitle())
         .venue(venue)
@@ -22,7 +21,7 @@ public class ConcertMapper {
         .build();
   }
 
-  public static ConcertResponse toConcertResponse(Concert concert){
+  public static ConcertResponse toConcertResponse(Concert concert) {
     ConcertResponse response = new ConcertResponse();
     response.setConcertTitle(concert.getConcertTitle());
     response.setDescription(concert.getDescription());
@@ -30,17 +29,15 @@ public class ConcertMapper {
     response.setConcertId(concert.getId());
     response.setVenueId(concert.getVenue().getId());
     response.setConcertStartTime(concert.getConcertStartTime());
-    response.setPrices(concert.getPrices().stream()
-        .map(ConcertMapper::toPriceResponse).toList());
+    response.setPrices(concert.getPrices().stream().map(ConcertMapper::toPriceResponse).toList());
     return response;
   }
 
-  public static PriceResponse toPriceResponse(Price price){
+  public static PriceResponse toPriceResponse(Price price) {
     PriceResponse response = new PriceResponse();
+    response.setPriceId(price.getId());
     response.setPrice(price.getPrice());
     response.setSeatGrade(price.getSeatGrade());
     return response;
   }
 }
-
-
