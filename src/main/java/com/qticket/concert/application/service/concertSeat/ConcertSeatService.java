@@ -161,7 +161,8 @@ public class ConcertSeatService {
             log.info("Seats are Selected");
           }
         });
-    //    kafkaTemplate.send("order.seat", "#userId",selectedSeats);
+
     return selectedSeats;
   }
+
 }
