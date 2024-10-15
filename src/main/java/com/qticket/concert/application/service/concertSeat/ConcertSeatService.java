@@ -170,23 +170,4 @@ public class ConcertSeatService {
     return selectedSeats;
   }
 
-  public List<UUID> selectConcertSeats2(List<UUID> concertIds) {
-    List<UUID> selectedSeats = new ArrayList<>();
-    for (UUID concertId : concertIds) {
-      System.out.println("여기  = " + concertId);
-    }
-    concertIds.forEach(id ->{
-      log.info("select 1 ConcertSeatId : {}", id);
-      if(redisSeatService.selectSeat(id)){
-        log.info("select 2 ConcertSeatId : {}", id);
-        selectedSeats.add(id);
-        ConcertSeat concertSeat =
-                concertSeatRepository
-                    .findById(id)
-                    .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
-            concertSeat.changeStatus(SeatStatus.PAYING);
-      }
-    });
-    return selectedSeats;
-  }
 }
