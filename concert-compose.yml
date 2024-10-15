@@ -1,0 +1,9 @@
+services:
+  qticket-coupon-app:
+    image: concert:latest
+    container_name: concert-app
+    ports:
+      - "8080:8080"
+    environment:
+      - spring.datasource.url=jdbc:h2:mem:test_db
+      - spring.datasource.username=sa

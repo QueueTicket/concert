@@ -44,7 +44,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
-//@Transactional
+@Transactional
 class ConcertServiceTest {
 
   private static final Logger log = LoggerFactory.getLogger(ConcertServiceTest.class);
