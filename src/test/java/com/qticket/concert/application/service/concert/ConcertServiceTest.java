@@ -220,7 +220,7 @@ class ConcertServiceTest {
     Concert concert1 = concertRepository.findById(concert.getConcertId()).get();
     List<ConcertSeat> concertSeats = concertSeatService.findByConcertId(concert1.getId());
     //when
-    concertService.deleteConcert(concert1.getId(), "test");
+    concertService.deleteConcert(concert1.getId(), 1L);
     em.flush();
     em.clear();
     List<ConcertSeat> after = concertSeatService.findByConcertId(concert1.getId());
