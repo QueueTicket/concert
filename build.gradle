@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.3.4'
 	id 'io.spring.dependency-management' version '1.1.6'
 	id 'maven-publish'
+	id 'com.google.cloud.tools.jib' version '3.2.0'
 }
 
 group = 'com.qticket'
@@ -73,4 +74,27 @@ dependencyManagement {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+jib {
+	from {
+		image = "openjdk:17-jdk-slim"
+		platforms {
+			platform {
+				architecture = "arm64"
+				os = "linux"
+			}
+//			platform {
+//				architecture = "amd64"
+//				os = "linux"
+//			}
+		}
+	}
+	to {
+		image = "shoon95/${project.name}:latest"
+	}
+	container {
+		mainClass = "com.qticket.concert.ConcertApplication"
+		creationTime = "USE_CURRENT_TIMESTAMP"
+	}
 }

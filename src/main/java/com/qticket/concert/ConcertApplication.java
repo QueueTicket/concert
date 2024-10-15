@@ -8,9 +8,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication(scanBasePackages = {"com.qticket.concert", "com.qticket.common"})
-@EnableJpaAuditing
 @EnableDiscoveryClient
 @EnableFeignClients
+@EnableJpaAuditing
 public class ConcertApplication {
 
 	public static void main(String[] args) {
