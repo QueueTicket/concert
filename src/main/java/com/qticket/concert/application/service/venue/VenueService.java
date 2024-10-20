@@ -1,16 +1,22 @@
 package com.qticket.concert.application.service.venue;
 
 import com.qticket.common.exception.QueueTicketException;
+import com.qticket.concert.application.service.concertSeat.ConcertSeatService;
 import com.qticket.concert.application.service.seat.SeatService;
 import com.qticket.concert.application.service.seat.mapper.SeatMapper;
 import com.qticket.concert.application.service.venue.mapper.VenueMapper;
+import com.qticket.concert.domain.concert.model.Concert;
+import com.qticket.concert.domain.concert.model.Price;
+import com.qticket.concert.domain.concertSeat.model.ConcertSeat;
 import com.qticket.concert.domain.seat.model.Seat;
 import com.qticket.concert.domain.seat.service.SeatUpdateService;
 import com.qticket.concert.domain.venue.Venue;
+import com.qticket.concert.exception.price.PriceErrorCode;
 import com.qticket.concert.exception.seat.SeatErrorCode;
 import com.qticket.concert.exception.venue.VenueErrorCode;
 import com.qticket.concert.infrastructure.repository.venue.VenueRepository;
 import com.qticket.concert.presentation.seat.dto.request.CreateSeatRequest;
+import com.qticket.concert.presentation.seat.dto.request.UpdateSeatRequest;
 import com.qticket.concert.presentation.seat.dto.response.SeatResponse;
 import com.qticket.concert.presentation.venue.VenueSearchCond;
 import com.qticket.concert.presentation.venue.dto.request.CreateVenueRequest;
@@ -28,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j(topic = "VenueService in Concert Server")
+@Slf4j
 public class VenueService {
 
   private final VenueRepository venueRepository;
@@ -36,7 +42,6 @@ public class VenueService {
   private final SeatUpdateService seatUpdateService;
 
   public VenueResponse createVenue(CreateVenueRequest request) {
-    log.info("create Venue");
     Venue venue = VenueMapper.createRequestToEntity(request);
     venueRepository.save(venue);
     List<CreateSeatRequest> seatList = request.getSeats();
@@ -46,7 +51,7 @@ public class VenueService {
     if (seatCount != request.getSeatCapacity()) {
       throw new QueueTicketException(SeatErrorCode.INSUFFICIENT_SEATS);
     }
-    log.info("seatCount in create Venue: {}", seatCount);
+
     for (CreateSeatRequest createSeatRequest : seatList) {
       for (int i = 1; i <= createSeatRequest.getSeatCount(); i++) {
         Seat.createSeat(createSeatRequest, i, venue);
@@ -60,16 +65,12 @@ public class VenueService {
     Venue venue = getVenue(venueId);
     venue.update(request);
 
-    venue
-        .getSeats()
-        .forEach(
-            seat ->
-                request.getSeatRequests().stream()
-                    .filter(r -> r.getSeatId().equals(seat.getId()))
-                    .forEach(
-                        r -> {
-                          seatUpdateService.updateSeatGradeAndPrice(seat, r, venue);
-                        }));
+    venue.getSeats().forEach(seat ->
+        request.getSeatRequests().stream()
+            .filter(r -> r.getSeatId().equals(seat.getId()))
+            .forEach(r -> {
+                  seatUpdateService.updateSeatGradeAndPrice(seat, r, venue);
+            }));
     log.info("venue and Seats updated");
     return VenueMapper.toResponse(venue);
   }
@@ -93,36 +94,32 @@ public class VenueService {
   }
 
   private Venue getVenue(UUID venueId) {
-    return venueRepository
-        .findById(venueId)
+    return venueRepository.findById(venueId)
         .orElseThrow(() -> new QueueTicketException(VenueErrorCode.NOT_FOUND));
   }
 
   public SeatResponse getOneSeat(UUID venueId, UUID seatId) {
     Venue venue = getVenue(venueId);
-    Seat seat =
-        venue.getSeats().stream()
-            .filter(s -> s.getId().equals(seatId))
-            .findFirst()
-            .orElseThrow(() -> new QueueTicketException(SeatErrorCode.NOT_FOUND));
+    Seat seat = venue.getSeats().stream()
+        .filter(s -> s.getId().equals(seatId))
+        .findFirst()
+        .orElseThrow(() -> new QueueTicketException(SeatErrorCode.NOT_FOUND));
     return SeatMapper.toSeatResponse(seat);
   }
 
   public VenueResponse addSeats(UUID venueId, CreateSeatRequest request) {
     Venue venue = getVenue(venueId);
-    int maxSeatCount =
-        venue.getSeats().stream()
-            .filter(seat -> seat.getSeatGrade().equals(request.getSeatGrade()))
-            .mapToInt(Seat::getSeatNumber)
-            .max()
-            .orElse(0);
+    int maxSeatCount = venue.getSeats().stream()
+        .filter(seat -> seat.getSeatGrade().equals(request.getSeatGrade()))
+        .mapToInt(Seat::getSeatNumber)
+        .max()
+        .orElse(0);
     for (int i = 1; i <= request.getSeatCount(); i++) {
-      Seat seat =
-          Seat.builder()
-              .seatNumber(i + maxSeatCount)
-              .venue(venue)
-              .seatGrade(request.getSeatGrade())
-              .build();
+      Seat seat = Seat.builder()
+          .seatNumber(i + maxSeatCount)
+          .venue(venue)
+          .seatGrade(request.getSeatGrade())
+          .build();
       venue.getSeats().add(seat);
     }
     Venue savedVenue = venueRepository.save(venue);

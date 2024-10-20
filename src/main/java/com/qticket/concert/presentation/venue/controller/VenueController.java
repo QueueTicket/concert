@@ -13,6 +13,7 @@ import com.qticket.concert.presentation.venue.dto.request.UpdateVenueRequest;
 import com.qticket.concert.presentation.venue.dto.response.VenueResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/venues")
-@Slf4j(topic = "VenueController in ConcertService")
+@Slf4j
 public class VenueController {
 
   private final VenueService venueService;
@@ -42,6 +43,7 @@ public class VenueController {
     if (isCustomer(currentUser.getCurrentUserRole())){
       throw new QueueTicketException(VenueErrorCode.UNAUTHORIZED);
     }
+
     return venueService.createVenue(request);
   }
 

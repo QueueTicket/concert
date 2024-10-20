@@ -35,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j(topic = "ConcertService in ConcertServer")
+@Slf4j
 public class ConcertService {
 
   private final ConcertRepository concertRepository;
@@ -46,7 +46,6 @@ public class ConcertService {
   // 공연 생성 시, 가격과 공연의 좌석 까지 전부 생성
   @CacheEvict(cacheNames = "concertAllCache", allEntries = true)
   public ConcertResponse createConcert(CreateConcertRequest request) {
-    log.info("create Concert");
     Venue venue =
         venueRepository
             .findById(request.getVenueId())
@@ -70,7 +69,6 @@ public class ConcertService {
   @CachePut(cacheNames = "concertCache", key = "#concertId")
   @CacheEvict(cacheNames = "concertAllCache", allEntries = true)
   public ConcertResponse updateConcert(UpdateConcertRequest request, UUID concertId) {
-    log.info("update Concert");
     Concert concert =
         concertRepository
             .findById(concertId)
