@@ -34,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j
+@Slf4j(topic = "ConcertSeatService in Concert Server")
 public class ConcertSeatService {
   private final ConcertSeatRepository concertSeatRepository;
   private final CacheManager cacheManager;
@@ -72,6 +72,10 @@ public class ConcertSeatService {
       throw new QueueTicketException(PriceErrorCode.NOT_FOUND);
     }
 
+    for (SeatGrade grade : priceMap.keySet()) {
+      log.info("Saved Grade : {}", grade);
+    }
+
     List<ConcertSeat> concertSeats =
         seatsByGrade.stream()
             .map(
@@ -93,15 +97,18 @@ public class ConcertSeatService {
 
   @Cacheable(cacheNames = "seatsForConcert", key = "#id")
   public List<ConcertSeat> findByConcertId(UUID id) {
+    log.info("Concert With Id {} founded", id);
     return concertSeatRepository.findByConcertId(id);
   }
 
   public int deleteWithConcert(UUID concertId) {
+    log.info("Concert With Id {} deleted", concertId);
     return concertSeatRepository.deleteWithConcert(concertId);
   }
 
   @CacheEvict(cacheNames = "seatsForConcert", allEntries = true)
   public List<ConcertSeatResponse> changeStatus(UpdateConcertSeatRequest request) {
+    log.info("change ConcertSeat Status");
     List<UUID> concertSeatIds = request.getConcertSeatIds();
     List<ConcertSeat> concertSeats =
         concertSeatIds.stream()
@@ -142,12 +149,16 @@ public class ConcertSeatService {
 
   // Redis 원자적 연산 이용
   public List<UUID> selectConcertSeats(List<UUID> concertIds) {
+    for (UUID concertId : concertIds) {
+      log.info("trying select Seat with Id {}", concertId);
+    }
     List<UUID> selectedSeats = new ArrayList<>();
     concertIds.forEach(
         id -> {
           Long result = redisRepository.selectSeats(id);
           log.info("result : {}", result);
           if (result < 0) {
+            log.error("select with id {} is not available", id);
             redisRepository.cancelSelect(id);
             throw new QueueTicketException(ConcertSeatErrorCode.PREEMPTED);
           } else {
@@ -164,5 +175,4 @@ public class ConcertSeatService {
 
     return selectedSeats;
   }
-
 }
