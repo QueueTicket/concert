@@ -8,7 +8,6 @@ services:
     environment:
       - spring.datasource.url=jdbc:h2:mem:test_db
       - spring.datasource.username=sa
-      - spring.profiles.active=prod
     volumes:
       - ./logs:/app/logs
 
