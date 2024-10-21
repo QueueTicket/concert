@@ -2,13 +2,9 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: "prometheus"
-    static_configs:
-      - targets: [ 'localhost:9090' ]
-
   - job_name: 'eureka-services'
     eureka_sd_configs:
-      - server: 'http://192.168.0.19:19090/eureka'  # Eureka 서버 주소
+      - server: 'http://hostserver:19090/eureka'  # Eureka 서버 주소
     metrics_path: '/actuator/prometheus'
     relabel_configs:
       - source_labels: [ '__meta_eureka_app_name' ]
