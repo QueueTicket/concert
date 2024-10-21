@@ -25,4 +25,18 @@ services:
       - prometheus
     restart: always
 
+# 파일 비트 로컬 환경에서만 테스트 완료
+#  filebeat:
+#    image: docker.elastic.co/beats/filebeat:8.15.2
+#    volumes:
+#      - /etc/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+#      - /var/run/docker.sock:/var/run/docker.sock:ro
+#      - /mnt/c/Users/jdm2131/study/sparta/qticket/concert/logs:/var/log/containers:ro
+#    environment:
+#      - ELASTIC_CLOUD_ID=${ELASTIC_CLOUD_ID}
+#      - ELASTIC_CLOUD_AUTH=${ELASTIC_CLOUD_AUTH}
+
+
+
 
