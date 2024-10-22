@@ -1,0 +1,57 @@
+{
+  "family": "queueticket-concert-app",
+  "containerDefinitions": [
+    {
+      "name": "concert-app",
+      "image": "shoon95/concert:latest",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "name": "concert-app-19094-tcp",
+          "containerPort": 19094,
+          "hostPort": 19094,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        }
+      ],
+      "environmentFiles": [],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "ulimits": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/queueticket-concert-app",
+          "mode": "non-blocking",
+          "awslogs-create-group": "true",
+          "max-buffer-size": "25m",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        },
+        "secretOptions": []
+      },
+      "systemControls": []
+    }
+  ],
+  "taskRoleArn": "arn:aws:iam::730335443023:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::730335443023:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "volumes": [],
+  "placementConstraints": [],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "3072",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  }
+}
