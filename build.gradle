@@ -26,9 +26,13 @@ repositories {
 
     maven {
         url = uri("https://maven.pkg.github.com/QueueTicket/common")
-
+        credentials {
+            username = "QueueTicket"
+            password = System.getenv("GITHUB_TOKEN")
+        }
     }
 }
+
 
 ext {
     set('springCloudVersion', "2023.0.3")
