@@ -79,24 +79,24 @@ tasks.named('test') {
 }
 
 jib {
-    from {
-        image = "openjdk:17-jdk-slim"
-        platforms {
-            platform {
-                architecture = "arm64"
-                os = "linux"
-            }
+	from {
+		image = "openjdk:17-jdk-slim"
+	platforms {
+		platform {
+			architecture = "arm64"
+			os = "linux"
+		}
 //			platform {
 //				architecture = "amd64"
 //				os = "linux"
 //			}
-        }
-    }
-    to {
-        image = "shoon95/${project.name}:latest"
-    }
-    container {
-        mainClass = "com.qticket.concert.ConcertApplication"
-        creationTime = "USE_CURRENT_TIMESTAMP"
-    }
+	}
+	}
+	to {
+		image = "shoon95/${project.name}:latest"
+	}
+	container {
+		mainClass = "com.qticket.concert.ConcertApplication"
+		creationTime = "USE_CURRENT_TIMESTAMP"
+	}
 }
