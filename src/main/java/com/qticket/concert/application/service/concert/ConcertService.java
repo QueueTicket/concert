@@ -9,6 +9,7 @@ import com.qticket.concert.domain.seat.model.Seat;
 import com.qticket.concert.domain.seat.model.SeatGrade;
 import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.concert.ConcertErrorCode;
+import com.qticket.concert.exception.queue.ErrorCode;
 import com.qticket.concert.exception.venue.VenueErrorCode;
 import com.qticket.concert.infrastructure.repository.concert.ConcertRepository;
 import com.qticket.concert.infrastructure.repository.price.PriceRepository;
@@ -17,20 +18,29 @@ import com.qticket.concert.presentation.concert.dto.ConcertSearchCond;
 import com.qticket.concert.presentation.concert.dto.requset.CreateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.requset.UpdateConcertRequest;
 import com.qticket.concert.presentation.concert.dto.response.ConcertResponse;
+
+import java.time.Instant;
 import com.qticket.concert.presentation.concert.dto.response.PriceResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
