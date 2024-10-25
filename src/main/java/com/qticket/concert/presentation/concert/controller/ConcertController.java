@@ -1,5 +1,6 @@
 package com.qticket.concert.presentation.concert.controller;
 
+import com.qticket.common.dto.ResponseDto;
 import com.qticket.common.login.Login;
 import com.qticket.concert.application.service.concert.ConcertService;
 import com.qticket.concert.presentation.concert.dto.ConcertSearchCond;
@@ -15,15 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
@@ -63,6 +57,12 @@ public class ConcertController {
   @GetMapping("/{concertId}")
   @ResponseStatus(HttpStatus.OK)
   public ConcertResponse getOneConcerts(@PathVariable UUID concertId){
+    System.out.println("redirect 요청 !!!!!");
     return concertService.getOneConcert(concertId);
 }
+
+  @GetMapping("/test")
+  public ResponseDto<?> test(@RequestHeader("X-USER-ROLE") String userRole) {
+    return ResponseDto.success("UserRole : " + userRole);
+  }
 }
