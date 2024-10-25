@@ -8,6 +8,5 @@ import lombok.Data;
 public class UpdateVenueRequest {
   private String venueName;
   private String venueAddress;
-  private Integer seatCapacity;
   private List<UpdateSeatRequest> seatRequests;
 }

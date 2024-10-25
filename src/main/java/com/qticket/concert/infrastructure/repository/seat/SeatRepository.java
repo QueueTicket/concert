@@ -10,5 +10,5 @@ public interface SeatRepository extends JpaRepository<Seat, UUID> {
 
   @Modifying
   @Query("UPDATE Seat s SET s.isDelete = true, s.deletedBy = :username WHERE s.venue = (SELECT v FROM Venue v WHERE v.id = :venueId)")
-  void softDeleteWithVenueId(UUID venueId, String username);
+  void softDeleteWithVenueId(UUID venueId, Long username);
 }

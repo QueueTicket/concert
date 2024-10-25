@@ -9,12 +9,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = {"com.qticket.concert"})
-@EnableJpaAuditing
+
+@SpringBootApplication(scanBasePackages = {"com.qticket.concert", "com.qticket.common"})
 @EnableDiscoveryClient
 @EnableFeignClients
 @EnableKafka
 @EnableScheduling
+@EnableJpaAuditing
 public class ConcertApplication {
 
 	public static void main(String[] args) {

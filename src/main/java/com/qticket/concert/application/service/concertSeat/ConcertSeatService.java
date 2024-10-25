@@ -1,6 +1,7 @@
 package com.qticket.concert.application.service.concertSeat;
 
 import com.qticket.common.exception.QueueTicketException;
+import com.qticket.concert.application.service.concertSeat.redis.RedisSeatService;
 import com.qticket.concert.domain.concert.model.Concert;
 import com.qticket.concert.domain.concert.model.Price;
 import com.qticket.concert.domain.concertSeat.model.ConcertSeat;
@@ -11,11 +12,14 @@ import com.qticket.concert.domain.venue.Venue;
 import com.qticket.concert.exception.concertSeat.ConcertSeatErrorCode;
 import com.qticket.concert.exception.price.PriceErrorCode;
 import com.qticket.concert.infrastructure.repository.concertSeat.ConcertSeatRepository;
+import com.qticket.concert.infrastructure.repository.redis.RedisRepository;
 import com.qticket.concert.presentation.concertSeat.dto.request.UpdateConcertSeatRequest;
 import com.qticket.concert.presentation.concertSeat.dto.response.ConcertSeatResponse;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +34,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j
+@Slf4j(topic = "ConcertSeatService in Concert Server")
 public class ConcertSeatService {
   private final ConcertSeatRepository concertSeatRepository;
   private final CacheManager cacheManager;
+  private final RedisRepository redisRepository;
+  private final RedisSeatService redisSeatService;
+
+  //  private final KafkaTemplate<String, Object> kafkaTemplate;
 
   public void createConcertSeat(Concert concert, Venue venue) {
     log.info("create ConcertSeat in createConcert");
@@ -41,8 +49,7 @@ public class ConcertSeatService {
     List<Seat> seats = venue.getSeats();
 
     Map<SeatGrade, Price> priceMap =
-        prices.stream()
-            .collect(Collectors.toMap(Price::getSeatGrade, p -> p));
+        prices.stream().collect(Collectors.toMap(Price::getSeatGrade, p -> p));
 
     List<SeatGrade> seatGrades = Arrays.asList(SeatGrade.R, SeatGrade.S, SeatGrade.A, SeatGrade.B);
 
@@ -50,18 +57,14 @@ public class ConcertSeatService {
     seatGrades.stream()
         .filter(seatGrade -> seatExistsForGrade(seats, seatGrade)) // 해당 좌석 등급이 존재하는지 확인
         .filter(priceMap::containsKey) // 해당 좌석 등급에 대한 가격이 존재하는지 확인
-        .forEach(seatGrade -> saveConcertSeatsForGrade(seats, seatGrade, priceMap));
+        .forEach(seatGrade -> saveConcertSeatsForGrade(concert, seats, seatGrade, priceMap));
   }
 
   // 공연 좌석 저장
-  private void saveConcertSeatsForGrade(
-      List<Seat> seats,
-      SeatGrade seatGrade,
-      Map<SeatGrade, Price> priceMap) {
+  private List<ConcertSeat> saveConcertSeatsForGrade(
+      Concert concert, List<Seat> seats, SeatGrade seatGrade, Map<SeatGrade, Price> priceMap) {
 
-    List<Seat> seatsByGrade = seats.stream()
-        .filter(s -> s.getSeatGrade() == seatGrade)
-        .toList();
+    List<Seat> seatsByGrade = seats.stream().filter(s -> s.getSeatGrade() == seatGrade).toList();
     Price price = priceMap.get(seatGrade);
 
     if (price == null) {
@@ -69,16 +72,23 @@ public class ConcertSeatService {
       throw new QueueTicketException(PriceErrorCode.NOT_FOUND);
     }
 
+    for (SeatGrade grade : priceMap.keySet()) {
+      log.info("Saved Grade : {}", grade);
+    }
+
     List<ConcertSeat> concertSeats =
         seatsByGrade.stream()
-            .map(s ->
-                    ConcertSeat.builder()
-                        .seat(s)
-                        .price(price)
-                        .status(SeatStatus.AVAILABLE).build())
+            .map(
+                s ->
+                    ConcertSeat.builder().seat(s).price(price).status(SeatStatus.AVAILABLE).build())
             .toList();
-
     concertSeatRepository.saveAll(concertSeats);
+    log.info("concertSeats size : {}", concertSeats.size());
+    concertSeats.forEach(
+        cs -> {
+          redisRepository.save(cs, concert);
+        });
+    return concertSeats;
   }
 
   private boolean seatExistsForGrade(List<Seat> seats, SeatGrade seatGrade) {
@@ -87,48 +97,82 @@ public class ConcertSeatService {
 
   @Cacheable(cacheNames = "seatsForConcert", key = "#id")
   public List<ConcertSeat> findByConcertId(UUID id) {
+    log.info("Concert With Id {} founded", id);
     return concertSeatRepository.findByConcertId(id);
   }
 
   public int deleteWithConcert(UUID concertId) {
+    log.info("Concert With Id {} deleted", concertId);
     return concertSeatRepository.deleteWithConcert(concertId);
   }
 
   @CacheEvict(cacheNames = "seatsForConcert", allEntries = true)
   public List<ConcertSeatResponse> changeStatus(UpdateConcertSeatRequest request) {
+    log.info("change ConcertSeat Status");
     List<UUID> concertSeatIds = request.getConcertSeatIds();
-    List<ConcertSeat> concertSeats = concertSeatIds.stream()
-        .map(id ->
-            concertSeatRepository
-                .findById(id)
-                .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND))
-        ).toList();
+    List<ConcertSeat> concertSeats =
+        concertSeatIds.stream()
+            .map(
+                id ->
+                    concertSeatRepository
+                        .findById(id)
+                        .orElseThrow(
+                            () -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND)))
+            .toList();
     concertSeats.forEach(cs -> cs.changeStatus(request.getStatus()));
 
     // 각 공연 좌석에 대한 다중 캐시 put
     Cache cache = cacheManager.getCache("concertSeat");
     if (cache != null) {
-      concertSeats.forEach(seat -> {
-        // 새로운 상태를 다시 캐시에 저장
-        ConcertSeatResponse response = ConcertSeatResponse.fromEntity(seat);
-        cache.put(seat.getId(), response);
-      });
+      concertSeats.forEach(
+          seat -> {
+            // 새로운 상태를 다시 캐시에 저장
+            ConcertSeatResponse response = ConcertSeatResponse.fromEntity(seat);
+            cache.put(seat.getId(), response);
+          });
     }
-    return  concertSeats.stream()
-        .map(ConcertSeatResponse::fromEntity)
-        .toList();
+    return concertSeats.stream().map(ConcertSeatResponse::fromEntity).toList();
   }
 
   @Cacheable(cacheNames = "concertSeat", key = "#concertSeatId")
   public ConcertSeatResponse getOneConcertSeat(UUID concertSeatId) {
-    ConcertSeat concertSeat = concertSeatRepository.findById(concertSeatId)
-        .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
+    ConcertSeat concertSeat =
+        concertSeatRepository
+            .findById(concertSeatId)
+            .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
     return ConcertSeatResponse.fromEntity(concertSeat);
   }
 
-  public ConcertSeat getConcertSeatBySeat(Seat seat) {
-    return concertSeatRepository
-        .findBySeatId(seat.getId())
-        .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
+  public Optional<ConcertSeat> getConcertSeatBySeat(UUID seatId) {
+    return concertSeatRepository.findBySeatId(seatId);
+  }
+
+  // Redis 원자적 연산 이용
+  public List<UUID> selectConcertSeats(List<UUID> concertIds) {
+    for (UUID concertId : concertIds) {
+      log.info("trying select Seat with Id {}", concertId);
+    }
+    List<UUID> selectedSeats = new ArrayList<>();
+    concertIds.forEach(
+        id -> {
+          Long result = redisRepository.selectSeats(id);
+          log.info("result : {}", result);
+          if (result < 0) {
+            log.error("select with id {} is not available", id);
+            redisRepository.cancelSelect(id);
+            throw new QueueTicketException(ConcertSeatErrorCode.PREEMPTED);
+          } else {
+            ConcertSeat concertSeat =
+                concertSeatRepository
+                    .findById(id)
+                    .orElseThrow(() -> new QueueTicketException(ConcertSeatErrorCode.NOT_FOUND));
+            concertSeat.changeStatus(SeatStatus.PAYING);
+            UUID concertSeatId = concertSeat.getId();
+            selectedSeats.add(concertSeatId);
+            log.info("Seats are Selected");
+          }
+        });
+
+    return selectedSeats;
   }
 }

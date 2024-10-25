@@ -3,6 +3,7 @@ package com.qticket.concert.domain.seat.model;
 import com.qticket.common.BaseEntity;
 import com.qticket.concert.domain.seat.model.SeatGrade;
 import com.qticket.concert.domain.venue.Venue;
+import com.qticket.concert.presentation.seat.dto.request.CreateSeatRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,6 +54,16 @@ public class Seat extends BaseEntity implements Serializable {
       this.seatNumber = seatNumber;
     }
   }
+
+  public static Seat createSeat(CreateSeatRequest request, int seatNumber, Venue venue){
+    Seat seat = Seat.builder()
+        .seatNumber(seatNumber)
+        .venue(venue)
+        .seatGrade(request.getSeatGrade())
+        .build();
+    seat.addSeat(venue);
+    return seat;
+}
 
 
 }

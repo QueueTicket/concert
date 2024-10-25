@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: concert-server
+  config:
+    import: optional:configserver:http://localhost:18089
